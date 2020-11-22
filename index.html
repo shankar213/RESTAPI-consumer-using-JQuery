@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Consumer using JavaScript & JQuery</title>
+    <style>
+        table {
+            margin: auto;
+            width: 80%;
+            font-family: arial, sans-serif;
+        }
+
+        table, th, td {
+            border: solid 1px #DDD;
+            border-collapse: collapse;
+            padding: 2px 3px;
+            text-align: center;
+            text-transform: capitalize;
+        }
+
+        input[type='button'] {
+            cursor: pointer;
+            border: none;
+            color: #FFF;
+        }
+
+        input[type='text'], select {
+            text-align: center;
+            border: solid 1px #CCC;
+            width: auto;
+            padding: 2px 3px;
+        }
+
+        table.details {
+            border-collapse: collapse;
+            width: 50%;
+        }
+
+        table.details td,table.details th {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 8px;
+        }
+
+        table tr:nth-child(even) {
+            background-color: #f7f7f7;
+        }
+    </style>
+</head>
+<body>
+<!--Show the app here.-->
+<h2 style="text-align: center"> All Cars</h2>
+<div id="container"></div>
+<div id="detailsContainer"></div>
+</body>
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script>
+    host = 'https://localhost:80/api/cars/'
+    apikey = '?apikey=uiGAsEtdrLhAhF4H1Kww6tqYvbEqiQN5'
+
+    const crudApp = new function () {
+        let self = this
+        this.myCars = []
+        // An array of JSON objects with values.
+        // this.myCars = [
+        //     { ID: '1', Car_Name: 'Computer Architecture', Category: 'Computers', Price: 125.60 },
+        //     { ID: '2', Car_Name: 'Asp.Net 4 Blue Car', Category: 'Programming', Price: 56.00 },
+        //     { ID: '3', Car_Name: 'Popular Science', Category: 'Science', Price: 210.40 },
+        // ]
+
+        this.col = []
+        this.fetchData = function () {
+            $.get(
+                host + apikey,
+                function (data, status) {
+                    self.myCars = data
+                    self.createTable()
+                })
+
+        }
+        this.createTable = function () {
+
+// Extract value for table header.
+            for (let i = 0; i < this.myCars.length; i++) {
+                for (var key in this.myCars[i]) {
+                    if (this.col.indexOf(key) === -1) {
+                        this.col.push(key)
+                    }
+                }
+            }
+
+            // CREATE A TABLE.
+            const table = document.createElement('table')
+            table.setAttribute('id', 'carsTable')     // Set table id.
+
+            let tr = table.insertRow(-1)               // Create a row (for header).
+
+            for (let h = 0; h < this.col.length; h++) {
+                // Add table header.
+                const th = document.createElement('th')
+                th.innerHTML = this.col[h].replace('_', ' ')
+                tr.appendChild(th)
+            }
+
+            // Add rows using JSON data.
+            for (let i = 0; i < this.myCars.length; i++) {
+
+                tr = table.insertRow(-1)           // Create a new row.
+
+                for (let j = 0; j < this.col.length; j++) {
+
+                    const tabCell = tr.insertCell(-1)
+                    if (j === 0) tabCell.innerHTML = i + 1
+                    else tabCell.innerHTML = this.myCars[i][this.col[j]]
+                }
+
+                // Dynamically create and add elements to table cells with events.
+
+                this.td = document.createElement('td')
+
+                // *** CANCEL OPTION.
+                tr.appendChild(this.td)
+                var lblCancel = document.createElement('label')
+                lblCancel.innerHTML = '✖'
+                lblCancel.setAttribute('onclick', 'crudApp.Cancel(this)')
+                lblCancel.setAttribute('style', 'display:none;')
+                lblCancel.setAttribute('title', 'Cancel')
+                lblCancel.setAttribute('id', 'lbl' + i)
+                this.td.appendChild(lblCancel)
+
+                // *** SAVE.
+                tr.appendChild(this.td)
+                const btSave = document.createElement('input')
+
+                btSave.setAttribute('type', 'button')
+                btSave.setAttribute('value', 'Save')
+                btSave.setAttribute('id', 'Save' + i)
+                btSave.setAttribute('style', 'display:none;')
+                btSave.setAttribute('onclick', 'crudApp.Save(this)')
+                this.td.appendChild(btSave)
+
+                // *** UPDATE.
+                tr.appendChild(this.td)
+                const btUpdate = document.createElement('input')
+
+                btUpdate.setAttribute('type', 'button')
+                btUpdate.setAttribute('value', 'Update')
+                btUpdate.setAttribute('id', 'Edit' + i)
+                btUpdate.setAttribute('style', 'background-color:#44CCEB;')
+                btUpdate.setAttribute('onclick', 'crudApp.Update(this)')
+                this.td.appendChild(btUpdate)
+
+                // *** DELETE.
+                this.td = document.createElement('th')
+                tr.appendChild(this.td)
+                const btDelete = document.createElement('input')
+                btDelete.setAttribute('type', 'button')
+                btDelete.setAttribute('value', 'Delete')
+                btDelete.setAttribute('style', 'background-color:#ED5650;')
+                btDelete.setAttribute('onclick', 'crudApp.Delete(this)')
+                this.td.appendChild(btDelete)
+
+                // *** GETDETAILs Button.
+                this.td = document.createElement('th')
+                tr.appendChild(this.td)
+                const btGetDetails = document.createElement('input')
+                btGetDetails.setAttribute('type', 'button')
+                btGetDetails.setAttribute('value', 'Get Details')
+                btGetDetails.setAttribute('style', 'background-color:#5099ED;')
+                btGetDetails.setAttribute('onclick', 'crudApp.GetDetails(this)')
+                this.td.appendChild(btGetDetails)
+            }
+
+            // ADD A ROW AT THE END WITH BLANK TEXT BOXES AND A DROPDOWN LIST (FOR NEW ENTRY).
+
+            tr = table.insertRow(-1)           // CREATE THE LAST ROW.
+
+            for (let j = 0; j < this.col.length; j++) {
+                var newCell = tr.insertCell(-1)
+                if (j >= 1) {
+                    var tBox = document.createElement('input')          // CREATE AND ADD A TEXTBOX.
+                    tBox.setAttribute('type', 'text')
+                    tBox.setAttribute('value', '')
+                    newCell.appendChild(tBox)
+                }
+            }
+
+            this.td = document.createElement('td')
+            tr.appendChild(this.td)
+
+            var btNew = document.createElement('input')
+
+            btNew.setAttribute('type', 'button')       // SET ATTRIBUTES.
+            btNew.setAttribute('value', 'Create')
+            btNew.setAttribute('id', 'New' )
+            btNew.setAttribute('colspan', 3 )
+            btNew.setAttribute('style', 'background-color:#207DD1;')
+            btNew.setAttribute('onclick', 'crudApp.CreateNew(this)')       // ADD THE BUTTON's 'onclick' EVENT.
+            this.td.appendChild(btNew)
+
+            var div = document.getElementById('container')
+            div.innerHTML = ''
+            div.appendChild(table)    // ADD THE TABLE TO THE WEB PAGE.
+        }
+
+        // ****** OPERATIONS START.
+
+        // CANCEL.
+        this.Cancel = function (oButton) {
+
+            // HIDE THIS BUTTON.
+            oButton.setAttribute('style', 'display:none; float:none;')
+
+            var activeRow = oButton.parentNode.parentNode.rowIndex
+
+            // HIDE THE SAVE BUTTON.
+            var btSave = document.getElementById('Save' + (activeRow - 1))
+            btSave.setAttribute('style', 'display:none;')
+
+            // SHOW THE UPDATE BUTTON AGAIN.
+            var btUpdate = document.getElementById('Edit' + (activeRow - 1))
+            btUpdate.setAttribute('style', 'display:block; margin:0 auto; background-color:#44CCEB;')
+
+            var tab = document.getElementById('carsTable').rows[activeRow]
+
+            for (let i = 0; i < this.col.length; i++) {
+                var td = tab.getElementsByTagName('td')[i]
+                td.innerHTML = this.myCars[(activeRow - 1)][this.col[i]]
+            }
+        }
+
+        // EDIT DATA.
+        this.Update = function (oButton) {
+            const activeRow = oButton.parentNode.parentNode.rowIndex
+            const tab = document.getElementById('carsTable').rows[activeRow]
+
+            // SHOW A DROPDOWN LIST WITH A LIST OF CATEGORIES.
+            for (let i = 1; i < 6; i++) {
+                const td = tab.getElementsByTagName('td')[i]
+                const ele = document.createElement('input')
+                ele.setAttribute('type', 'text')
+                ele.setAttribute('value', td.innerText)
+                td.innerText = ''
+                td.appendChild(ele)
+            }
+
+            var lblCancel = document.getElementById('lbl' + (activeRow - 1))
+            lblCancel.setAttribute('style',
+                'cursor:pointer; display:block; width:20px; float:left; position: absolute;')
+
+            var btSave = document.getElementById('Save' + (activeRow - 1))
+            btSave.setAttribute('style', 'display:block; margin-left:30px; float:left; background-color:#2DBF64;')
+
+            // HIDE THIS BUTTON.
+            oButton.setAttribute('style', 'display:none;')
+        }
+
+        // DELETE DATA.
+        this.Delete = function (oButton) {
+            var activeRow = oButton.parentNode.parentNode.rowIndex
+            // this.myCars.splice((activeRow - 1), 1)    // DELETE THE ACTIVE ROW.
+            // this.createTable()                         // REFRESH THE TABLE.
+
+            const settings = {
+                'url': `${host}${this.myCars[activeRow - 1]['id']}${apikey}`,
+                'method': 'DELETE',
+                'timeout': 0,
+            }
+            self = this
+            $.ajax(settings).done(function (response) {
+                self.fetchData()
+            })
+        }
+
+        // SAVE DATA.
+        this.Save = function (oButton) {
+            const activeRow = oButton.parentNode.parentNode.rowIndex
+            const tab = document.getElementById('carsTable').rows[activeRow]
+
+            // UPDATE myCars ARRAY WITH VALUES.
+            let updatedObj = {}
+            for (let i = 1; i < this.col.length; i++) {
+                const td = tab.getElementsByTagName('td')[i]
+                if (td.childNodes[0].getAttribute('type') === 'text') {  // CHECK IF ELEMENT IS A TEXTBOX OR SELECT.
+                    // this.myCars[(activeRow - 1)][this.col[i]] = td.childNodes[0].value      // SAVE THE VALUE.
+                    updatedObj[this.col[i]] = td.childNodes[0].value
+                }
+            }
+
+            const settings = {
+                'url': `${host}${this.myCars[activeRow - 1]['id']}${apikey}`,
+                'method': 'PUT',
+                'timeout': 0,
+                'headers': {
+                    'Content-Type': 'application/json',
+                },
+                'data': JSON.stringify(updatedObj),
+            }
+            self = this
+            $.ajax(settings).done(function (response) {
+                self.fetchData()
+            })
+            // REFRESH THE TABLE.
+        }
+
+        // CREATE NEW.
+        this.CreateNew = function (oButton) {
+            const activeRow = oButton.parentNode.parentNode.rowIndex
+            const tab = document.getElementById('carsTable').rows[activeRow]
+            let obj = {}
+
+            // ADD NEW VALUE TO myCars ARRAY.
+            for (let i = 1; i < this.col.length; i++) {
+                const td = tab.getElementsByTagName('td')[i]
+                if (td.childNodes[0].getAttribute('type') === 'text') {
+                    const txtVal = td.childNodes[0].value
+                    if (txtVal != '') {
+                        obj[this.col[i]] = txtVal.trim()
+                    } else {
+                        obj = ''
+                        alert('all fields are compulsory')
+                        break
+                    }
+                }
+            }   // NEW ID.
+
+
+            if (Object.keys(obj).length > 0) {      // CHECK IF OBJECT IS NOT EMPTY.
+                // this.myCars.push(obj)             // PUSH (ADD) DATA TO THE JSON ARRAY.
+                // this.createTable()                 // REFRESH THE TABLE.
+                var settings = {
+                    'url': host + apikey,
+                    'method': 'POST',
+                    'timeout': 0,
+                    'headers': {
+                        'Content-Type': 'application/json',
+                    },
+                    'data': JSON.stringify(obj),
+                }
+                self = this
+                $.ajax(settings).done(function (response) {
+                    self.fetchData()
+                })
+
+                // $.post(,
+                //     JSON.parse(JSON.stringify(obj)),
+                //     function(data, status){
+                //
+                //     });
+            }
+        }
+
+        this.GetDetails = function (oButton) {
+            const activeRow = oButton.parentNode.parentNode.rowIndex
+
+            var settings = {
+                'url': `${host}${this.myCars[activeRow - 1]['id']}${apikey}`,
+                "method": "GET",
+                "timeout": 0,
+            };
+
+            $.ajax(settings).done(function (response) {
+                const dataHTML = `<h2 style="text-align: center"> Details of the Car</h2>` +
+                    `<table class="details">` +
+                    `  <tr><th width="50%">Make</th><td width="50%">${response.make}</td></tr>`+
+                    `  <tr><th>Model</th><td>${response.model}</td></tr>`+
+                    `  <tr><th>Color</th><td>${response.color}</td></tr>`+
+                    `  <tr><th>Size</th><td>${response.size}</td></tr>`+
+                    `  <tr><th>Year Manufactured</th><td>${response.year}</td></tr>`+
+                    `</table>`
+                const div = document.getElementById('detailsContainer')
+                div.innerHTML = dataHTML
+            });
+        }
+
+        // ****** OPERATIONS END.
+    }
+
+    crudApp.fetchData()
+</script>
+</html>
